@@ -16,7 +16,6 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const { Timestamp } = require('firebase-admin/firestore');
 
-// Tarea programada cada minuto (solo si ejecutas manualmente, en Render no es necesario esto)
 console.log('🔔 Verificando recordatorios para enviar...');
 
 const now = new Date();
