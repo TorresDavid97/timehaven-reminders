@@ -10,7 +10,7 @@ if (!admin.apps.length) {
       privateKey: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
     }),
     databaseURL: 'https://appoimentsapp.firebaseio.com',
-  });
+  });  
 }
 
 const db = admin.firestore();
