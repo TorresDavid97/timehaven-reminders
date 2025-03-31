@@ -1,52 +1,15 @@
-const admin = require('firebase-admin');
 require('dotenv').config();
-const serviceAccount = require('./serviceAccountKey.json'); // 👈 Usa directamente el archivo
+const axios = require('axios');
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-    databaseURL: 'https://appoimentsapp.firebaseio.com',
-  });
-}
-
-const db = admin.firestore();
-const { Timestamp } = require('firebase-admin/firestore');
-
-console.log('🔔 Verificando recordatorios para enviar...');
-
-const now = new Date();
-const nowTimestamp = Timestamp.fromDate(now);
+console.log('🔔 Verificando recordatorios a través de la API...');
 
 (async () => {
   try {
-    const snapshot = await db
-      .collection('appoiment')
-      .where('reminderTimestamp', '<=', nowTimestamp)
-      .get();
-
-    if (snapshot.empty) {
-      console.log('✅ No hay recordatorios pendientes.');
-      return;
-    }
-
-    for (const doc of snapshot.docs) {
-      const data = doc.data();
-      const appointmentId = doc.id;
-
-      if (data.reminderSent === true || data.appointmentStatus === 'Canceled') continue;
-
-      const clientName = data.clientName || 'Cliente';
-      const time = data.startTime.toDate();
-      const formattedTime = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-
-      console.log(`📩 Recordatorio enviado a ${clientName} a las ${formattedTime} (ID: ${appointmentId})`);
-
-      await db.collection('appoiment').doc(appointmentId).update({
-        reminderSent: true,
-      });
-    }
+    // Llama a la ruta de tu API para revisar recordatorios
+    const response = await axios.get('https://barberagend.onrender.com/api/check-reminders');
+    console.log('✅ Respuesta de la API:', response.data);
   } catch (error) {
-    console.error('❌ Error al verificar o enviar recordatorios:', error.message);
+    console.error('❌ Error al llamar a la API:', error.message);
   }
 })();
 
