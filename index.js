@@ -1,12 +1,14 @@
 const admin = require('firebase-admin');
-const cron = require('node-cron');
 require('dotenv').config();
 
 // Inicializar Firebase
 if (!admin.apps.length) {
-  const serviceAccount = require('./serviceAccountKey.json');
   admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
+    credential: admin.credential.cert({
+      projectId: process.env.GOOGLE_PROJECT_ID,
+      clientEmail: process.env.GOOGLE_CLIENT_EMAIL,
+      privateKey: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    }),
     databaseURL: 'https://appoimentsapp.firebaseio.com',
   });
 }
@@ -14,15 +16,14 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 const { Timestamp } = require('firebase-admin/firestore');
 
-// Tarea programada cada minuto
-cron.schedule('* * * * *', async () => {
-  console.log('🔔 Verificando recordatorios para enviar...');
+// Tarea programada cada minuto (solo si ejecutas manualmente, en Render no es necesario esto)
+console.log('🔔 Verificando recordatorios para enviar...');
 
-  const now = new Date();
-  const nowTimestamp = Timestamp.fromDate(now);
+const now = new Date();
+const nowTimestamp = Timestamp.fromDate(now);
 
+(async () => {
   try {
-    // Solo filtramos por fecha
     const snapshot = await db
       .collection('appoiment')
       .where('reminderTimestamp', '<=', nowTimestamp)
@@ -37,7 +38,6 @@ cron.schedule('* * * * *', async () => {
       const data = doc.data();
       const appointmentId = doc.id;
 
-      // Filtros adicionales en código
       if (data.reminderSent === true || data.appointmentStatus === 'Canceled') continue;
 
       const clientName = data.clientName || 'Cliente';
@@ -46,7 +46,6 @@ cron.schedule('* * * * *', async () => {
 
       console.log(`📩 Recordatorio enviado a ${clientName} a las ${formattedTime} (ID: ${appointmentId})`);
 
-      // Marcar como enviado
       await db.collection('appoiment').doc(appointmentId).update({
         reminderSent: true,
       });
@@ -54,8 +53,6 @@ cron.schedule('* * * * *', async () => {
   } catch (error) {
     console.error('❌ Error al verificar o enviar recordatorios:', error.message);
   }
-}, {
-  timezone: 'America/New_York'
-});
+})();
 
-console.log('⏳ Cron job de recordatorios inicializado...');
+console.log('⏳ Script de recordatorios ejecutado...');
