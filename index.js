@@ -44,7 +44,7 @@ cron.schedule('* * * * *', async () => {
       const time = data.startTime.toDate();
       const formattedTime = time.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
 
-      console.log(`📩 Recordatorio enviado para el cliente ${clientName} a las ${formattedTime} (ID: ${appointmentId})`);
+      console.log(`📩 Recordatorio enviado a ${clientName} a las ${formattedTime} (ID: ${appointmentId})`);
 
       // Marcar como enviado
       await db.collection('appoiment').doc(appointmentId).update({
