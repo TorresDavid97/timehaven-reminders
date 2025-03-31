@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Plaid Integration for Employees</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #004080; /* Fondo azul representando un proceso bancario */
+      margin: 0;
+    }
+  
+    .container {
+      text-align: center;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      width: 95%;
+    }
+  
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+  
+    p {
+      color: #555;
+      margin-bottom: 20px;
+    }
+  
+    ol {
+      text-align: left;
+      margin-bottom: 20px;
+    }
+  
+    li {
+      margin-bottom: 10px;
+    }
+  
+    .button-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+  
+    #link-button, #update-button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+      margin: 0 10px;
+    }
+  
+    #link-button:hover, #update-button:hover {
+      background-color: #0056b3;
+    }
+  
+    .message {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      display: none;
+    }
+  
+    .message.success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+  
+    .message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    
+    .funding-source {
+      display: flex;
+      align-items: center;
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #e9ecef;
+      color: #495057;
+      height: 150px;
+    }
+  
+    .funding-source-icon {
+      margin-right: 15px;
+      font-size: 135px; /* Aumenta el tamaño del icono */
+      color: #007bff;
+    }
+  
+    .funding-source-info {
+      text-align: left;
+    }
+  
+    @media (max-width: 768px) {
+      .container {
+        width: 95%;
+      }
+  
+      h1 {
+        font-size: 28px; /* Aumenta el tamaño del texto en dispositivos móviles */
+      }
+  
+      p, li {
+        font-size: 24px; /* Aumenta el tamaño del texto en dispositivos móviles */
+      }
+  
+      #link-button, #update-button {
+        font-size: 24px; /* Aumenta el tamaño del botón en dispositivos móviles */
+        padding: 12px 24px; /* Aumenta el relleno del botón en dispositivos móviles */
+      }
+    }
+  </style>
+  
+</head>
+<body>
+  <div class="container">
+    <h1 id="title"><%= latestFundingSource ? 'Update Your Bank Account' : 'Connect Your Bank Account' %></h1>
+    <p id="description"><%= latestFundingSource ? 'Update your bank account for direct deposit by clicking the "Update Account" button.' : 'Follow the steps below to add your bank account to our system:' %></p>
+    <% if (!latestFundingSource) { %>
+    <ol id="instructions">
+      <li>Click the "Connect a bank account" button.</li>
+      <li>Securely link your bank account through Plaid.</li>
+      <li>Once completed, your bank account will be added to our system.</li>
+    </ol>
+    <% } %>
+    <div class="button-container">
+      <button id="link-button" style="display: <%= latestFundingSource ? 'none' : 'block' %>;">Connect a bank account</button>
+      <button id="update-button" style="display: <%= latestFundingSource ? 'block' : 'none' %>;">Update Account</button>
+    </div>
+    <div id="message" class="message"></div>
+    <div id="funding-source" class="funding-source" style="display: none;">
+      <div class="funding-source-icon">🏦</div>
+      <div class="funding-source-info">
+        <h2>Latest Funding Source</h2>
+        <p id="funding-source-info"></p>
+      </div>
+    </div>
+    <script>
+      console.log('latestFundingSource:', <%= JSON.stringify(latestFundingSource) %>);
+    </script>
+  </div>
+
+  <script>
+    const customerId = "<%= customerId %>";
+
+    async function getLinkToken() {
+      const response = await fetch('/create-link-token', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      return data.link_token;
+    }
+
+    async function getLatestFundingSource() {
+      const response = await fetch('/get-latest-funding-source', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ customerId })
+      });
+
+      const data = await response.json();
+      console.log('Funding source data:', data);
+      const fundingSourceDiv = document.getElementById('funding-source');
+      const fundingSourceInfoDiv = document.getElementById('funding-source-info');
+
+      if (fundingSourceDiv && fundingSourceInfoDiv) {
+        if (data.success && data.fundingSource) {
+          const fundingSourceInfo = `Name: ${data.fundingSource.name}<br>Bank: ${data.fundingSource.bankName}<br>Type: ${data.fundingSource.type}<br>Verified: ${data.fundingSource.verified ? 'Yes' : 'No'}<br>Created: ${new Date(data.fundingSource.created).toLocaleString()}`;
+          fundingSourceInfoDiv.innerHTML = fundingSourceInfo;
+          fundingSourceDiv.style.display = 'flex';
+        } else {
+          fundingSourceInfoDiv.innerHTML = 'No funding source found.';
+          fundingSourceDiv.style.display = 'flex';
+        }
+      }
+    }
+
+    document.getElementById('link-button').onclick = document.getElementById('update-button').onclick = async () => {
+      const linkToken = await getLinkToken();
+      if (!linkToken) {
+        displayMessage('No link token received', 'error');
+        return;
+      }
+      const handler = Plaid.create({
+        token: linkToken,
+        onSuccess: (public_token, metadata) => {
+          // Enviar el public_token al servidor
+          fetch('/exchange-public-token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ public_token })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Access token:', data.access_token);
+            console.log('Account ID:', data.account_id);
+
+            // Agregar la cuenta bancaria a Dwolla para un cliente específico (empleado)
+            fetch('/add-funding-source-employee', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                customerUrl: `https://api-sandbox.dwolla.com/customers/${customerId}`,
+                accessToken: data.access_token,
+                accountId: data.account_id,
+                accountName: 'Employee Bank Account',
+                token: '<%= token %>' // Asegúrate de pasar el token aquí
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                displayMessage('Bank account successfully added for the employee. You can now close this window.', 'success');
+                const linkButton = document.getElementById('link-button');
+                const updateButton = document.getElementById('update-button');
+                const instructions = document.getElementById('instructions');
+                if (linkButton) linkButton.style.display = 'none';
+                if (updateButton) updateButton.style.display = 'block';
+                if (instructions) instructions.style.display = 'none';
+                document.getElementById('title').textContent = 'Bank Account Added Successfully';
+                document.getElementById('description').textContent = 'You can now close this window.';
+                getLatestFundingSource(); // Update the latest funding source
+
+                // Redirigir a la página de confirmación
+                setTimeout(() => {
+                  window.location.href = '/connectAccountConfirmation';
+                }, 2000); // Espera 2 segundos antes de redirigir
+              } else {
+                displayMessage('Error: ' + data.error, 'error');
+              }
+            })
+            .catch(error => {
+              console.error('Error:', error);
+              displayMessage('Error adding funding source', 'error');
+            });
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            displayMessage('Error exchanging public token', 'error');
+          });
+        },
+        onExit: (err, metadata) => {
+          // Manejar el caso en que el usuario cierre el Plaid Link sin completar el proceso
+          if (err) {
+            console.error('Plaid Error:', err);
+            displayMessage('Error connecting bank account', 'error');
+          }
+        }
+      });
+
+      handler.open();
+    };
+
+    function displayMessage(message, type) {
+      const messageDiv = document.getElementById('message');
+      if (messageDiv) {
+        messageDiv.textContent = message;
+        messageDiv.className = `message ${type}`;
+        messageDiv.style.display = 'block';
+      }
+    }
+
+    // Call getLatestFundingSource on page load to show the latest funding source if it exists
+    getLatestFundingSource();
+  </script>
+</body>
+</html>

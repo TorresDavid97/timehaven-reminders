@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Process Completed</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f7fa;
+            margin: 0;
+        }
+        .message-container {
+            text-align: center;
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .message-container h1 {
+            color: #2E8B57;
+            font-size: 24px;
+        }
+        .message-container p {
+            color: #333333;
+            font-size: 16px;
+        }
+        .button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            color: #ffffff;
+            background-color: #2E8B57;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .button:hover {
+            background-color: #256b45;
+        }
+    </style>
+</head>
+<body>
+    <div class="message-container">
+        <h1>Process Completed Successfully</h1>
+        <p>You can now close this window and continue in the PPP app.</p>
+        <a href="#" class="button" onclick="window.close();">Close Window</a>
+    </div>
+</body>
+</html>

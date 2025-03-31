@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Plaid Integration</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #f5f5f5;
+    }
+
+    .container {
+      text-align: center;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    p {
+      color: #555;
+      margin-bottom: 20px;
+    }
+
+    #link-button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    #link-button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Connect Your Bank Account</h1>
+    <p>Click the button below to start the process of adding your bank account to our system. This will open a secure connection with Plaid to link your bank account.</p>
+    <button id="link-button">Connect a bank account</button>
+  </div>
+
+  <script>
+    async function getLinkToken() {
+      const response = await fetch('/create-link-token', {
+        method: 'POST'
+      });
+      const data = await response.json();
+      return data.link_token;
+    }
+
+    document.getElementById('link-button').onclick = async () => {
+      const linkToken = await getLinkToken();
+      if (!linkToken) {
+        console.error('No link token received');
+        return;
+      }
+      const handler = Plaid.create({
+        token: linkToken,
+        onSuccess: (public_token, metadata) => {
+          // Enviar el public_token al servidor
+          fetch('/exchange-public-token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ public_token })
+          })
+          .then(response => response.json())
+          .then(data => {
+            console.log('Access token:', data.access_token);
+            console.log('Account ID:', data.account_id);
+
+            // Agregar la cuenta bancaria a Dwolla
+            fetch('/add-funding-source-main-account', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify({
+                accessToken: data.access_token,
+                accountId: data.account_id,
+                accountName: 'My Bank Account'
+              })
+            })
+            .then(response => response.json())
+            .then(data => {
+              console.log('Funding source URL:', data.fundingSourceUrl);
+            })
+            .catch(error => console.error('Error:', error));
+          })
+          .catch(error => console.error('Error:', error));
+        },
+        onExit: (err, metadata) => {
+          // Manejar el caso en que el usuario cierre el Plaid Link sin completar el proceso
+          if (err) {
+            console.error('Plaid Error:', err);
+          }
+        }
+      });
+
+      handler.open();
+    };
+  </script>
+</body>
+</html>

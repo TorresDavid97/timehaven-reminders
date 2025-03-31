@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Plaid Integration</title>
+  <script src="https://cdn.plaid.com/link/v2/stable/link-initialize.js"></script>
+  <style>
+    /* Tu CSS aquí */
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 id="title">Connect Your Bank Account</h1>
+    <p id="description">Follow the steps below to add your bank account to our system:</p>
+    <ol id="instructions">
+      <li>Click the "Connect a bank account" button.</li>
+      <li>Securely link your bank account through Plaid.</li>
+      <li>Once completed, your bank account will be added to our system.</li>
+    </ol>
+    <button id="link-button">Connect a bank account</button>
+    <div id="message" class="message"></div>
+  </div>
+
+  <script>
+    const customerId = '<%= customerId %>'; // Obtener el customerId del servidor
+
+    async function getLinkToken() {
+      const response = await fetch('/create-link-token', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ customerId }) // Enviar el customerId al backend
+      });
+      const data = await response.json();
+      return data.link_token;
+    }
+
+    document.getElementById('link-button').onclick = async () => {
+      const linkToken = await getLinkToken();
+      if (!linkToken) {
+        displayMessage('No link token received', 'error');
+        return;
+      }
+
+      const handler = Plaid.create({
+        token: linkToken,
+        onSuccess: (public_token) => {
+          // Enviar el public_token y el customerId al servidor para intercambiarlo por access_token y account_id
+          fetch('/exchange-public-token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ public_token, customerId })
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              displayMessage('Bank account added successfully!', 'success');
+
+              // Mostrar los datos para guardar en Firebase
+              console.log('Access Token:', data.access_token);
+              console.log('Account ID:', data.account_id);
+              
+              // Aquí, podrías enviar estos datos de vuelta a FlutterFlow
+            } else {
+              displayMessage('Error: ' + data.error, 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            displayMessage('Error exchanging public token', 'error');
+          });
+        },
+        onExit: (err) => {
+          if (err) {
+            console.error('Plaid Error:', err);
+            displayMessage('Error connecting bank account', 'error');
+          }
+        }
+      });
+
+      handler.open();
+    };
+
+    function displayMessage(message, type) {
+      const messageDiv = document.getElementById('message');
+      messageDiv.textContent = message;
+      messageDiv.className = `message ${type}`;
+      messageDiv.style.display = 'block';
+    }
+  </script>
+</body>
+</html>

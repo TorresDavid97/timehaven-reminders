@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Success</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      background-color: #004080;
+      margin: 0;
+      overflow: hidden; /* Para evitar el desplazamiento debido al confeti */
+    }
+    .container {
+      text-align: center;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      max-width: 800px;
+      width: 95%;
+      z-index: 10; /* Asegurarse de que el contenedor esté por encima del confeti */
+    }
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+      color: #004080;
+    }
+    p {
+      font-size: 24px;
+      color: #333;
+    }
+    .confetti {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      background-color: #ffcc00;
+      opacity: 0;
+      animation: fall 4s linear infinite;
+    }
+    @keyframes fall {
+      to {
+        transform: translateY(100vh);
+        opacity: 1;
+      }
+    }
+    .confetti:nth-child(2n) {
+      background-color: #ff6666;
+    }
+    .confetti:nth-child(3n) {
+      background-color: #66ff66;
+    }
+    .confetti:nth-child(4n) {
+      background-color: #6666ff;
+    }
+    .confetti:nth-child(5n) {
+      background-color: #ff66ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Bank Account Added Successfully</h1>
+    <p>You can now close this window.</p>
+  </div>
+
+  <script>
+    // Función para generar confeti
+    function createConfetti() {
+      const confettiCount = 100; // Número de piezas de confeti
+      const colors = ['#ffcc00', '#ff6666', '#66ff66', '#6666ff', '#ff66ff'];
+      for (let i = 0; i < confettiCount; i++) {
+        const confetti = document.createElement('div');
+        confetti.className = 'confetti';
+        confetti.style.left = Math.random() * 100 + 'vw';
+        confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        confetti.style.animationDelay = Math.random() * 4 + 's';
+        document.body.appendChild(confetti);
+      }
+    }
+    createConfetti();
+  </script>
+</body>
+</html>
