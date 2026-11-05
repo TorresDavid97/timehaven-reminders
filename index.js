@@ -6,7 +6,7 @@ console.log('🔔 Verificando recordatorios a través de la API...');
 (async () => {
   try {
     // Llama a la ruta de tu API para revisar recordatorios
-    const response = await axios.get('https://barberagend.onrender.com/api/check-reminders');
+    const response = await axios.get('https://barberagend.onrender.com/api/check-reminders', { headers: { 'x-cron-secret': process.env.CRON_SECRET || '' } });
     console.log('✅ Respuesta de la API:', response.data);
   } catch (error) {
     console.error('❌ Error al llamar a la API:', error.message);
